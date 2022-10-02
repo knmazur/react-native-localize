@@ -6,7 +6,11 @@ import type {
   TemperatureUnit,
 } from "./types";
 
-const { RNLocalize } = NativeModules;
+
+const isTurboModuleEnabled = global.__turboModuleProxy != null;
+
+const module = !isTurboModuleEnabled ? NativeModules.RNLocalize : require('../codegen/NativeLocalize').default;
+const RNLocalize = !isTurboModuleEnabled ? module : module.getConstants();
 
 if (__DEV__) {
   if (RNLocalize == null) {

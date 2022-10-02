@@ -1,27 +1,46 @@
 package com.zoontek.rnlocalize;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
-import com.facebook.react.ReactPackage;
+import com.facebook.react.TurboReactPackage;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.uimanager.ViewManager;
+import com.facebook.react.module.model.ReactModuleInfo;
+import com.facebook.react.module.model.ReactModuleInfoProvider;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-public class RNLocalizePackage implements ReactPackage {
+public class RNLocalizePackage extends TurboReactPackage {
 
-  @NonNull
-  @Override
-  public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
-    return Arrays.<NativeModule>asList(new RNLocalizeModule(reactContext));
-  }
+    @Nullable
+    @Override
+    public NativeModule getModule(String name, ReactApplicationContext reactContext) {
+        if (name.equals(RNLocalizeModuleImpl.MODULE_NAME)) {
+            return new RNLocalizeModule(reactContext);
+        } else {
+            return null;
+        }
+    }
 
-  @NonNull
-  @Override
-  public List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
-    return Collections.emptyList();
-  }
+    @Override
+    public ReactModuleInfoProvider getReactModuleInfoProvider() {
+        return () -> {
+            final Map<String, ReactModuleInfo> moduleInfos = new HashMap<>();
+            boolean isTurboModule = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;
+
+            moduleInfos.put(
+                    RNLocalizeModuleImpl.MODULE_NAME,
+                    new ReactModuleInfo(
+                            RNLocalizeModuleImpl.MODULE_NAME,
+                            RNLocalizeModuleImpl.MODULE_NAME,
+                            false, // canOverrideExistingModule
+                            false, // needsEagerInit
+                            true, // hasConstants
+                            false, // isCxxModule
+                            isTurboModule // isTurboModule
+            ));
+            return moduleInfos;
+        };
+    }
 }

@@ -38,10 +38,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 
-@ReactModule(name = RNLocalizeModule.MODULE_NAME)
-public class RNLocalizeModule extends ReactContextBaseJavaModule {
+
+public class RNLocalizeModuleImpl {
 
   public static final String MODULE_NAME = "RNLocalize";
+  private ReactApplicationContext context;
 
   private final List<String> USES_FAHRENHEIT =
     Arrays.asList("BS", "BZ", "KY", "PR", "PW", "US");
@@ -53,7 +54,7 @@ public class RNLocalizeModule extends ReactContextBaseJavaModule {
   private final @NonNull BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
     @Override
     public void onReceive(Context context, Intent intent) {
-      ReactApplicationContext reactContext = getReactApplicationContext();
+      ReactApplicationContext reactContext = RNLocalizeModuleImpl.this.context;
 
       if (intent.getAction() != null &&
         reactContext.hasActiveCatalystInstance()) {
@@ -64,17 +65,10 @@ public class RNLocalizeModule extends ReactContextBaseJavaModule {
     }
   };
 
-  public RNLocalizeModule(ReactApplicationContext reactContext) {
-    super(reactContext);
+  public RNLocalizeModuleImpl(ReactApplicationContext reactContext) {
+    this.context = reactContext;
   }
 
-  @NonNull
-  @Override
-  public String getName() {
-    return MODULE_NAME;
-  }
-
-  @Override
   public @Nullable Map<String, Object> getConstants() {
     HashMap<String, Object> constants = new HashMap<>();
     constants.put("initialConstants", getExportedConstants());
@@ -82,10 +76,7 @@ public class RNLocalizeModule extends ReactContextBaseJavaModule {
     return constants;
   }
 
-  @Override
   public void initialize() {
-    super.initialize();
-
     IntentFilter filter = new IntentFilter();
 
     filter.addAction(Intent.ACTION_LOCALE_CHANGED);
@@ -93,31 +84,17 @@ public class RNLocalizeModule extends ReactContextBaseJavaModule {
     filter.addAction(Intent.ACTION_TIME_CHANGED);
     filter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
 
-    getReactApplicationContext()
+    context
       .registerReceiver(mBroadcastReceiver, filter);
   }
 
-  @Override
   public void onCatalystInstanceDestroy() {
-    super.onCatalystInstanceDestroy();
-
-    getReactApplicationContext()
-      .unregisterReceiver(mBroadcastReceiver);
-  }
-
-  @ReactMethod
-  public void addListener(String eventName) {
-    // Set up any upstream listeners or background tasks as necessary
-  }
-
-  @ReactMethod
-  public void removeListeners(Integer count) {
-    // Remove upstream listeners, stop unnecessary background tasks
+    context.unregisterReceiver(mBroadcastReceiver);
   }
 
   private @NonNull List<Locale> getLocales() {
     List<Locale> locales = new ArrayList<>();
-    Configuration config = getReactApplicationContext()
+    Configuration config = context
       .getResources()
       .getConfiguration();
 
@@ -232,7 +209,7 @@ public class RNLocalizeModule extends ReactContextBaseJavaModule {
   }
 
   private boolean getUsesAutoDateAndTime() {
-    ContentResolver resolver = getReactApplicationContext().getContentResolver();
+    ContentResolver resolver = context.getContentResolver();
 
     return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1
       ? Settings.Global.getInt(resolver, Settings.Global.AUTO_TIME, 0)
@@ -240,7 +217,7 @@ public class RNLocalizeModule extends ReactContextBaseJavaModule {
   }
 
   private boolean getUsesAutoTimeZone() {
-    ContentResolver resolver = getReactApplicationContext().getContentResolver();
+    ContentResolver resolver = context.getContentResolver();
 
     return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1
       ? Settings.Global.getInt(resolver, Settings.Global.AUTO_TIME_ZONE, 0)
@@ -307,7 +284,7 @@ public class RNLocalizeModule extends ReactContextBaseJavaModule {
     exported.putMap("numberFormatSettings", getNumberFormatSettings(currentLocale));
     exported.putString("temperatureUnit", USES_FAHRENHEIT.contains(currentRegionCode) ? "fahrenheit" : "celsius");
     exported.putString("timeZone", TimeZone.getDefault().getID());
-    exported.putBoolean("uses24HourClock", DateFormat.is24HourFormat(getReactApplicationContext()));
+    exported.putBoolean("uses24HourClock", DateFormat.is24HourFormat(context));
     exported.putBoolean("usesAutoDateAndTime", getUsesAutoDateAndTime());
     exported.putBoolean("usesAutoTimeZone", getUsesAutoTimeZone());
     exported.putBoolean("usesMetricSystem", !USES_IMPERIAL.contains(currentRegionCode));
